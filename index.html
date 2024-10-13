@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Location</title>
+    <script>
+        // Function to start tracking user location every 1 minute
+        function startTrackingLocation() {
+            const email = document.getElementById('email').value;
+
+            // Check if email is entered
+            if (!email) {
+                alert("Please enter your Gmail address.");
+                return;
+            }
+
+            // Check if geolocation is supported
+            if (navigator.geolocation) {
+                // Repeat the location request every 60 seconds
+                setInterval(function() {
+                    navigator.geolocation.getCurrentPosition(function(position) {
+                        sendPosition(position, email);
+                    }, showError);
+                }, 60000);
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        }
+
+        // Function to send the user's location and email to Google Apps Script
+        function sendPosition(position, email) {
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+
+            // URL of your Google Apps Script Web App (replace with your own Web App URL)
+            var scriptURL = 'https://script.google.com/macros/s/AKfycbwREgsA0EkSkpHoJOKxsgoaWWOI-5vlBLhGRBaGHMRGklmvY_vNk1N2H21kHwp_gpuCdQ/exec';
+            
+            // Create a data object to send
+            var data = {
+                email: email,
+                lat: latitude,
+                long: longitude
+            };
+
+            // Send the data to Google Sheets via Google Apps Script
+            fetch(scriptURL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.text())
+            .then(result => console.log('Location sent successfully for ' + email))
+            .catch(error => console.error('Error:', error));
+        }
+
+        // Handle errors if location access is denied or unavailable
+        function showError(error) {
+            switch (error.code) {
+                case error.PERMISSION_DENIED:
+                    console.log("User denied the request for Geolocation.");
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    console.log("Location information is unavailable.");
+                    break;
+                case error.TIMEOUT:
+                    console.log("The request to get user location timed out.");
+                    break;
+                case error.UNKNOWN_ERROR:
+                    console.log("An unknown error occurred.");
+                    break;
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Track and Send Your Location</h1>
+    <p>Your location will be sent to the server every 1 minute.</p>
+    <label for="email">Enter your Gmail:</label>
+    <input type="email" id="email" placeholder="Enter your Gmail">
+    <button onclick="startTrackingLocation()">Start Tracking Location</button>
+</body>
+</html>
